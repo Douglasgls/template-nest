@@ -37,21 +37,25 @@ export class UserService {
     return await this.repUser.save(user);
   }
 
-  async update(id: number, user: UserDto): Promise<UserResponseDto | null> {
-    const userExists = await this.repUser.findOneBy({ id: id });
-    if (!userExists) {
-      return null;
-    }
-    const password_hash = await encryptPassword(user.password_hash);
+  async update(id: number, userDto?: UserDto, partial = false, data?: Partial<UserDto>): Promise<UserResponseDto | null> {
+    const user = await this.repUser.findOneBy({ id });
+    if (!user) return null;
 
-    await this.repUser.update(id, {
-      username: user.username,
-      email: user.email,
-      password_hash: password_hash,
-      updated_at: new Date(),
-    });
-    const userUpdated = await this.repUser.findOneBy({ id: id });
-    return userUpdated;
+    if (partial && data) {
+      if (data.password_hash) {
+        data.password_hash = await encryptPassword(data.password_hash);
+      }
+      await this.repUser.update(id, data);
+      return await this.repUser.findOneBy({ id });
+    }
+
+    if (userDto) {
+      userDto.password_hash = await encryptPassword(userDto.password_hash);
+      await this.repUser.update(id, { ...userDto, updated_at: new Date() });
+      return await this.repUser.findOneBy({ id });
+    }
+
+    return user;
   }
 
   async delete(id: number): Promise<UserResponseDto | null> {
@@ -65,6 +69,16 @@ export class UserService {
 
   async findOne(email: string): Promise<UserDto | null> {
     const userExists = await this.repUser.findOneBy({ email: email });
+
+    if (!userExists) {
+      return null;
+    }
+
+    return userExists;
+  }
+
+  async findOneByid(id: number): Promise<UserDto | null> {
+    const userExists = await this.repUser.findOneBy({ id: id });
 
     if (!userExists) {
       return null;

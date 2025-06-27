@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
 } from '@nestjs/common';
@@ -53,6 +54,32 @@ export class UserController {
     if (!user) {
       return null;
     }
+    return user;
+  }
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  async findOne(@Param('id') id: number, @Body() User: any): Promise<UserResponseDto | null> {
+    const validKeys = {
+      username: 'string',
+      email: 'string',
+      password_hash: 'string'
+    };
+
+    const updateFields: Record<string, any> = {};
+
+    for (const key of Object.keys(User)) {
+      if (key in validKeys && typeof User[key] === validKeys[key]) {
+        updateFields[key] = User[key];
+      }
+    }
+
+    const user = await this.userService.update(id, undefined, true, updateFields);
+    
+    if (!user) {
+      return null;
+    }
+    
     return user;
   }
 
