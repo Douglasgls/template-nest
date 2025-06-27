@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserDto, UserResponseDto } from './dto/user.dto';
 import { encryptPassword } from 'src/utils/utils';
+import { omit } from 'lodash';
 
 @Injectable()
 export class UserService {
@@ -21,8 +22,7 @@ export class UserService {
     if (!userExists) {
       return null;
     }
-    const { password_hash, ...result } = userExists;
-    return result;
+    return omit(userExists, ['password_hash']);
   }
 
   async create(user: UserDto): Promise<User | null> {
@@ -37,7 +37,12 @@ export class UserService {
     return await this.repUser.save(user);
   }
 
-  async update(id: number, userDto?: UserDto, partial = false, data?: Partial<UserDto>): Promise<UserResponseDto | null> {
+  async update(
+    id: number,
+    userDto?: UserDto,
+    partial = false,
+    data?: Partial<UserDto>,
+  ): Promise<UserResponseDto | null> {
     const user = await this.repUser.findOneBy({ id });
     if (!user) return null;
 

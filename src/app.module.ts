@@ -10,7 +10,6 @@ import { AuthModule } from './auth/auth.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     UserModule,
-    AuthModule,
     DatabaseModule,
     AuthModule,
   ],

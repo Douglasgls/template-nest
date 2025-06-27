@@ -20,7 +20,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const password = await comparePassword(pass, user.password_hash);
+    const password = comparePassword(pass, user.password_hash);
 
     if (!password) {
       throw new UnauthorizedException();
@@ -42,10 +42,11 @@ export class AuthService {
   ): Promise<{ refresh_token: string }> {
     const access_token = userToken.access_token;
 
-    const payload = await this.jwtService.verifyAsync(access_token, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      ignoreExpiration: true,
-    });
+    const payload: { email: string; username: string; sub: number } =
+      await this.jwtService.verifyAsync(access_token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        ignoreExpiration: true,
+      });
 
     if (!payload) {
       throw new UnauthorizedException();
