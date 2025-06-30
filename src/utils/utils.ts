@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 export async function encryptPassword(password: string): Promise<string> {
-  const salt = await bcrypt.genSalt();
+  const salt = bcrypt.genSaltSync(10);
   return bcrypt.hashSync(password, salt);
 }
 

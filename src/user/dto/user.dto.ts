@@ -1,26 +1,22 @@
 import { IsEmail, IsNotEmpty, IsStrongPassword } from 'class-validator';
 
-export class UserDto {
+export class UserResquestDTO {
   @IsNotEmpty()
   username: string;
+  
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @IsNotEmpty()
-  @IsStrongPassword({
-    minLength: 8,
-    minLowercase: 1,
-    minUppercase: 1,
-    minNumbers: 1,
-  })
+  @IsStrongPassword()
   password_hash: string;
 }
 
-export class UserResponseDto {
-  id: number;
+export class UserResponseDTO {
+  id: string;
   username: string;
   email: string;
   created_at: Date;
-  updated_at: Date;
+  updated_at: Date | null;
 }

@@ -1,94 +1,138 @@
-import { Injectable } from '@nestjs/common';
-import { User } from './entity/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserDto, UserResponseDto } from './dto/user.dto';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { UserResquestDTO, UserResponseDTO } from './dto/user.dto';
 import { encryptPassword } from 'src/utils/utils';
 import { omit } from 'lodash';
+import { IUserRepository } from './repository/IUserRepository';
+import { User } from './entity/user.entity';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private repUser: Repository<User>,
+    @Inject('IUserRepository')
+    private readonly repositoryUser: IUserRepository,
   ) {}
 
-  async getAll(): Promise<User[]> {
-    return await this.repUser.find();
+  async getAll(): Promise<UserResponseDTO[]> {
+    const users = await this.repositoryUser.getAll();
+    return users.map(user => omit(user, ['password_hash'])) as UserResponseDTO[];
   }
 
-  async getOne(id: number): Promise<UserResponseDto | null> {
-    const userExists = await this.repUser.findOne({ where: { id: id } });
-    if (!userExists) {
-      return null;
+  async getOne(id: string): Promise<UserResponseDTO> {
+    const user = await this.repositoryUser.findOneByID(id);
+    if (!user) {
+      throw new BadRequestException('User not found');
     }
-    return omit(userExists, ['password_hash']);
+    return omit(user, ['password_hash']) as UserResponseDTO;
   }
 
-  async create(user: UserDto): Promise<User | null> {
-    const userExists = await this.repUser.findOne({
-      where: { email: user.email },
-    });
-    if (userExists) {
-      return null;
+  async create(user: UserResquestDTO): Promise<UserResponseDTO> {
+    const existingUser = await this.repositoryUser.findOneByEmail(user.email);
+    if (existingUser) {
+      throw new BadRequestException('User already exists');
     }
+
+    const senha = user.password_hash
     user.password_hash = await encryptPassword(user.password_hash);
+    console.log('user.password_hash', user.password_hash + ' ' + senha);
     user.username = user.username.toUpperCase();
-    return await this.repUser.save(user);
+
+
+    const userWithFields = {
+      ...user,
+      created_at: new Date(),
+      updated_at: null,
+    };
+
+    const created = await this.repositoryUser.create(userWithFields);
+    return omit(created, ['password_hash']) as UserResponseDTO;
   }
 
   async update(
-    id: number,
-    userDto?: UserDto,
-    partial = false,
-    data?: Partial<UserDto>,
-  ): Promise<UserResponseDto | null> {
-    const user = await this.repUser.findOneBy({ id });
-    if (!user) return null;
+    id: string,
+    user: UserResquestDTO,
+  ): Promise<UserResponseDTO> {
+    const existUser = await this.repositoryUser.findOneByID(id);
 
-    if (partial && data) {
-      if (data.password_hash) {
-        data.password_hash = await encryptPassword(data.password_hash);
+    if (!existUser) {
+      throw new BadRequestException('User not found');
+    }
+
+    const userNewInstance  = plainToInstance(User, user)
+    userNewInstance.username = user.username.toUpperCase();
+    userNewInstance.password_hash = await encryptPassword(user.password_hash);
+    userNewInstance.email = user.email;
+    userNewInstance.updated_at = new Date();
+
+    const updated = await this.repositoryUser.update(id, userNewInstance);
+    return omit(updated, ['password_hash']) as UserResponseDTO;
+  }
+
+  async updatePartial(
+    id: string,
+    user: Partial<UserResquestDTO>
+  ): Promise<UserResponseDTO> {
+
+    const existUser = await this.repositoryUser.findOneByID(id);
+
+    if (!existUser) {
+      throw new BadRequestException('User not found');
+    }
+
+    const validKeys = {
+      username: 'string',
+      email: 'string',
+      password_hash: 'string',
+    };
+
+    const updateFields: Record<string, any> = {};
+
+    for (const key of Object.keys(user)) {
+      if (key in validKeys && typeof user[key] === validKeys[key]) {
+        updateFields[key] = user[key];
       }
-      await this.repUser.update(id, data);
-      return await this.repUser.findOneBy({ id });
     }
 
-    if (userDto) {
-      userDto.password_hash = await encryptPassword(userDto.password_hash);
-      await this.repUser.update(id, { ...userDto, updated_at: new Date() });
-      return await this.repUser.findOneBy({ id });
+    const userNewInstance = plainToInstance(User, updateFields)
+
+    for (const key of Object.keys(updateFields)) {
+        userNewInstance[key] = updateFields[key];
     }
 
-    return user;
+    const updated = await this.repositoryUser.update(id, userNewInstance);
+    return omit(updated, ['password_hash']) as UserResponseDTO;
   }
 
-  async delete(id: number): Promise<UserResponseDto | null> {
-    const userExists = await this.repUser.findOneBy({ id: id });
-    if (!userExists) {
+  async delete(id: string): Promise<UserResponseDTO> {
+    const user = await this.repositoryUser.findOneByID(id);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    await this.repositoryUser.delete(id);
+    return omit(user, ['password_hash']) as UserResponseDTO;
+  }
+
+  async findOneByEmail(email: string): Promise<UserResponseDTO | null> {
+    const user = await this.repositoryUser.findOneByEmail(email);
+    if (!user) {
       return null;
     }
-    await this.repUser.delete(id);
-    return userExists;
+    return omit(user, ['password_hash']) as UserResponseDTO;
   }
 
-  async findOne(email: string): Promise<UserDto | null> {
-    const userExists = await this.repUser.findOneBy({ email: email });
-
-    if (!userExists) {
+  async findOneById(id: string): Promise<UserResponseDTO | null> {
+    const user = await this.repositoryUser.findOneByID(id);
+    if (!user) {
       return null;
     }
-
-    return userExists;
+    return omit(user, ['password_hash']) as UserResponseDTO;
   }
 
-  async findOneByid(id: number): Promise<UserDto | null> {
-    const userExists = await this.repUser.findOneBy({ id: id });
-
-    if (!userExists) {
-      return null;
-    }
-
-    return userExists;
-  }
+  
+  async findByUserEmail(email: string): Promise<User | null> {
+  const user = await this.repositoryUser.findOneByEmail(email);
+  console.log(user);
+  return user ?? null;
+}
 }

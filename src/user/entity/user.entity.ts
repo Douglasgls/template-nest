@@ -2,9 +2,14 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
+
+  constructor(partial: Partial<User>) {
+    Object.assign(this, partial);
+  }
+
+  @PrimaryGeneratedColumn('uuid')
   @Column({ primary: true, unique: true })
-  id: number;
+  id?: string;
 
   @Column()
   username: string;
@@ -19,5 +24,5 @@ export class User {
   created_at: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  updated_at: Date;
+  updated_at: null | Date;
 }

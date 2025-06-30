@@ -12,10 +12,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from './entity/user.entity';
-import { UserDto, UserResponseDto } from './dto/user.dto';
+import { UserResponseDTO, UserResquestDTO } from './dto/user.dto';
 import { UserGuard } from './user.guard';
-import { omit } from 'lodash';
 
 @Controller('user')
 export class UserController {
@@ -24,88 +22,48 @@ export class UserController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @UseGuards(UserGuard)
-  getHello(): Promise<User[]> {
+  getHello(): Promise<UserResponseDTO[]> {
     return this.userService.getAll();
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() User: UserDto): Promise<UserResponseDto | null> {
-    const user = await this.userService.create(User);
-    if (!user) {
-      return null;
-    }
-    return omit(user, ['password_hash']);
+  async create(@Body() User: UserResquestDTO): Promise<UserResponseDTO | null> {
+    return await this.userService.create(User);
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(UserGuard)
-  async getOne(@Param('id') id: number): Promise<UserResponseDto | null> {
-    const user = await this.userService.getOne(id);
-    if (!user) {
-      return null;
-    }
-    return user;
+  async getOne(@Param('id') id: string): Promise<UserResponseDTO | null> {
+    return await this.userService.getOne(id);
   }
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(UserGuard)
   async update(
-    @Param('id') id: number,
-    @Body() User: UserDto,
-  ): Promise<UserResponseDto | null> {
-    const user = await this.userService.update(id, User);
-    if (!user) {
-      return null;
-    }
-    return user;
+    @Param('id') id: string,
+    @Body() User: UserResquestDTO,
+  ): Promise<UserResponseDTO | null> {
+    console.log(id + ' ' + User);
+    return await this.userService.update(id, User);
   }
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(UserGuard)
   async updatePartial(
-    @Param('id') id: number,
-    @Body() User: any,
-  ): Promise<UserResponseDto | null> {
-    const validKeys = {
-      username: 'string',
-      email: 'string',
-      password_hash: 'string',
-    };
-
-    const updateFields: Record<string, any> = {};
-
-    for (const key of Object.keys(User)) {
-      if (key in validKeys && typeof User[key] === validKeys[key]) {
-        updateFields[key] = User[key];
-      }
-    }
-
-    const user = await this.userService.update(
-      id,
-      undefined,
-      true,
-      updateFields,
-    );
-
-    if (!user) {
-      return null;
-    }
-
-    return user;
+    @Param('id') id: string,
+    @Body() User: Partial<UserResquestDTO>,
+  ): Promise<UserResponseDTO | null> {
+    return await this.userService.updatePartial(id, User);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(UserGuard)
-  async delete(@Param('id') id: number): Promise<UserResponseDto | null> {
-    const user = await this.userService.delete(id);
-    if (!user) {
-      return null;
-    }
-    return user;
+  async delete(@Param('id') id: string): Promise<UserResponseDTO | null> {
+    return await this.userService.delete(id);
   }
 }
