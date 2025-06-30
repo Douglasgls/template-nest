@@ -1,7 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from '../user/user.service';
-import { comparePassword } from '../utils/utils';
+import { comparePassword, generateJWT } from '../utils/utils';
 import { ConfigService } from '@nestjs/config';
 import { AuthTokenDto } from './dto/auth.dto';
 
@@ -26,15 +26,12 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const payload = { email: user.email, username: user.username };
+    const payload = { id: user.id };
 
-    return {
-      access_token: await this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<string>('JWT_EXPIRATION'),
-        secret: this.configService.get<string>('JWT_SECRET'),
-        algorithm: 'HS256',
-      }),
-    };
+    const access_token = await generateJWT(payload);
+
+    return { access_token };
+      
   }
 
   async refreshToken(
@@ -42,7 +39,7 @@ export class AuthService {
   ): Promise<{ refresh_token: string }> {
     const access_token = userToken.access_token;
 
-    const payload: { email: string; username: string; sub: number } =
+    const payload: { email: string; username: string; id: string } =
       await this.jwtService.verifyAsync(access_token, {
         secret: this.configService.get<string>('JWT_SECRET'),
         ignoreExpiration: true,
@@ -52,15 +49,12 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const { email, username, sub } = payload;
+    this.usersService.findByUserEmail(payload.email);
 
-    const newPayload = { email, username, sub };
+    const newPayload = { id: payload.id };
 
-    const refresh_token = await this.jwtService.signAsync(newPayload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_EXPIRATION'),
-      algorithm: 'HS256',
-    });
-    return { refresh_token };
+    const newAccess_token = await generateJWT(newPayload);
+
+    return { refresh_token: newAccess_token };
   }
 }

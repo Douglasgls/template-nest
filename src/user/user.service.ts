@@ -22,6 +22,7 @@ export class UserService {
 
   async getOne(id: string): Promise<UserResponseDTO> {
     const user = await this.repositoryUser.findOneByID(id);
+    console.log(user);
     if (!user) {
       throw new BadRequestException('User not found');
     }

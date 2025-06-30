@@ -14,6 +14,7 @@ import {
 import { UserService } from './user.service';
 import { UserResponseDTO, UserResquestDTO } from './dto/user.dto';
 import { UserGuard } from './user.guard';
+import { IsOwnerGuard } from 'src/auth/is-owner.guard';
 
 @Controller('user')
 export class UserController {
@@ -34,14 +35,15 @@ export class UserController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(UserGuard)
+  @UseGuards(UserGuard,IsOwnerGuard)
   async getOne(@Param('id') id: string): Promise<UserResponseDTO | null> {
+    console.log(id);
     return await this.userService.getOne(id);
   }
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(UserGuard)
+  @UseGuards(UserGuard,IsOwnerGuard)
   async update(
     @Param('id') id: string,
     @Body() User: UserResquestDTO,
@@ -51,7 +53,7 @@ export class UserController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(UserGuard)
+  @UseGuards(UserGuard,IsOwnerGuard)
   async updatePartial(
     @Param('id') id: string,
     @Body() User: Partial<UserResquestDTO>,
@@ -61,7 +63,7 @@ export class UserController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(UserGuard)
+  @UseGuards(UserGuard,IsOwnerGuard)
   async delete(@Param('id') id: string): Promise<UserResponseDTO | null> {
     return await this.userService.delete(id);
   }
