@@ -1,7 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from '../user/user.service';
-import { comparePassword,encryptPassword } from '../utils/utils';
+import { comparePassword } from '../utils/utils';
 import { ConfigService } from '@nestjs/config';
 import { AuthTokenDto } from './dto/auth.dto';
 

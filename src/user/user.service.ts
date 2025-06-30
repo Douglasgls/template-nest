@@ -15,7 +15,9 @@ export class UserService {
 
   async getAll(): Promise<UserResponseDTO[]> {
     const users = await this.repositoryUser.getAll();
-    return users.map(user => omit(user, ['password_hash'])) as UserResponseDTO[];
+    return users.map((user) =>
+      omit(user, ['password_hash']),
+    ) as UserResponseDTO[];
   }
 
   async getOne(id: string): Promise<UserResponseDTO> {
@@ -32,11 +34,10 @@ export class UserService {
       throw new BadRequestException('User already exists');
     }
 
-    const senha = user.password_hash
+    const senha = user.password_hash;
     user.password_hash = await encryptPassword(user.password_hash);
     console.log('user.password_hash', user.password_hash + ' ' + senha);
     user.username = user.username.toUpperCase();
-
 
     const userWithFields = {
       ...user,
@@ -48,17 +49,14 @@ export class UserService {
     return omit(created, ['password_hash']) as UserResponseDTO;
   }
 
-  async update(
-    id: string,
-    user: UserResquestDTO,
-  ): Promise<UserResponseDTO> {
+  async update(id: string, user: UserResquestDTO): Promise<UserResponseDTO> {
     const existUser = await this.repositoryUser.findOneByID(id);
 
     if (!existUser) {
       throw new BadRequestException('User not found');
     }
 
-    const userNewInstance  = plainToInstance(User, user)
+    const userNewInstance = plainToInstance(User, user);
     userNewInstance.username = user.username.toUpperCase();
     userNewInstance.password_hash = await encryptPassword(user.password_hash);
     userNewInstance.email = user.email;
@@ -70,9 +68,8 @@ export class UserService {
 
   async updatePartial(
     id: string,
-    user: Partial<UserResquestDTO>
+    user: Partial<UserResquestDTO>,
   ): Promise<UserResponseDTO> {
-
     const existUser = await this.repositoryUser.findOneByID(id);
 
     if (!existUser) {
@@ -93,10 +90,10 @@ export class UserService {
       }
     }
 
-    const userNewInstance = plainToInstance(User, updateFields)
+    const userNewInstance = plainToInstance(User, updateFields);
 
     for (const key of Object.keys(updateFields)) {
-        userNewInstance[key] = updateFields[key];
+      userNewInstance[key] = updateFields[key];
     }
 
     const updated = await this.repositoryUser.update(id, userNewInstance);
@@ -129,10 +126,9 @@ export class UserService {
     return omit(user, ['password_hash']) as UserResponseDTO;
   }
 
-  
   async findByUserEmail(email: string): Promise<User | null> {
-  const user = await this.repositoryUser.findOneByEmail(email);
-  console.log(user);
-  return user ?? null;
-}
+    const user = await this.repositoryUser.findOneByEmail(email);
+    console.log(user);
+    return user ?? null;
+  }
 }

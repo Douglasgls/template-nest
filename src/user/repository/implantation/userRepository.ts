@@ -1,8 +1,7 @@
-import { IUserRepository } from "../IUserRepository";
-import { encryptPassword } from "src/utils/utils";
-import { User } from "src/user/entity/user.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { IUserRepository } from '../IUserRepository';
+import { User } from 'src/user/entity/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 export class UserRepository implements IUserRepository {
   constructor(
@@ -33,7 +32,10 @@ export class UserRepository implements IUserRepository {
     return await this.repositoryUser.findOneBy({ id });
   }
 
-  async updatePartial(id: string, partial: Partial<User>): Promise<User | null> {
+  async updatePartial(
+    id: string,
+    partial: Partial<User>,
+  ): Promise<User | null> {
     const user = await this.repositoryUser.findOneBy({ id });
     if (!user) return null;
     await this.repositoryUser.update(id, partial);

@@ -46,7 +46,6 @@ export class UserController {
     @Param('id') id: string,
     @Body() User: UserResquestDTO,
   ): Promise<UserResponseDTO | null> {
-    console.log(id + ' ' + User);
     return await this.userService.update(id, User);
   }
 
