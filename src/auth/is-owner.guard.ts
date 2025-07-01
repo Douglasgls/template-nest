@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
 
@@ -22,7 +22,7 @@ export class IsOwnerGuard implements CanActivate {
     const jwtService = new JwtService();
 
     const dataJWT = jwtService.decode(token);
-    
+
     if (!dataJWT.id) {
       return false;
     }
@@ -33,6 +33,5 @@ export class IsOwnerGuard implements CanActivate {
     }
 
     return true;
-
   }
 }

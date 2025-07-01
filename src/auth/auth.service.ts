@@ -31,7 +31,6 @@ export class AuthService {
     const access_token = await generateJWT(payload);
 
     return { access_token };
-      
   }
 
   async refreshToken(

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { UserResquestDTO, UserResponseDTO } from './dto/user.dto';
-import { encryptPassword } from 'src/utils/utils';
+import { encryptPassword } from '../utils/utils';
 import { omit } from 'lodash';
 import { IUserRepository } from './repository/IUserRepository';
 import { User } from './entity/user.entity';
@@ -22,7 +22,6 @@ export class UserService {
 
   async getOne(id: string): Promise<UserResponseDTO> {
     const user = await this.repositoryUser.findOneByID(id);
-    console.log(user);
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -35,9 +34,7 @@ export class UserService {
       throw new BadRequestException('User already exists');
     }
 
-    const senha = user.password_hash;
     user.password_hash = await encryptPassword(user.password_hash);
-    console.log('user.password_hash', user.password_hash + ' ' + senha);
     user.username = user.username.toUpperCase();
 
     const userWithFields = {
@@ -52,9 +49,14 @@ export class UserService {
 
   async update(id: string, user: UserResquestDTO): Promise<UserResponseDTO> {
     const existUser = await this.repositoryUser.findOneByID(id);
+    const existingUser = await this.repositoryUser.findOneByEmail(user.email);
 
     if (!existUser) {
       throw new BadRequestException('User not found');
+    }
+
+    if (existingUser && existingUser.id !== id) {
+      throw new BadRequestException('User already exists');
     }
 
     const userNewInstance = plainToInstance(User, user);
@@ -63,8 +65,11 @@ export class UserService {
     userNewInstance.email = user.email;
     userNewInstance.updated_at = new Date();
 
-    const updated = await this.repositoryUser.update(id, userNewInstance);
-    return omit(updated, ['password_hash']) as UserResponseDTO;
+    await this.repositoryUser.update(id, userNewInstance);
+
+    const userUpdated = await this.repositoryUser.findOneByID(id);
+
+    return omit(userUpdated, ['password_hash']) as UserResponseDTO;
   }
 
   async updatePartial(
@@ -75,6 +80,14 @@ export class UserService {
 
     if (!existUser) {
       throw new BadRequestException('User not found');
+    }
+
+    const existingUser = await this.repositoryUser.findOneByEmail(
+      existUser?.email,
+    );
+
+    if (existingUser && existingUser.id !== id) {
+      throw new BadRequestException('User already exists');
     }
 
     const validKeys = {
@@ -89,6 +102,12 @@ export class UserService {
       if (key in validKeys && typeof user[key] === validKeys[key]) {
         updateFields[key] = user[key];
       }
+    }
+
+    if (updateFields.password_hash) {
+      updateFields.password_hash = await encryptPassword(
+        updateFields.password_hash,
+      );
     }
 
     const userNewInstance = plainToInstance(User, updateFields);
@@ -129,7 +148,6 @@ export class UserService {
 
   async findByUserEmail(email: string): Promise<User | null> {
     const user = await this.repositoryUser.findOneByEmail(email);
-    console.log(user);
     return user ?? null;
   }
 }
